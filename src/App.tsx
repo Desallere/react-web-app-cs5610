@@ -11,6 +11,7 @@ function App() {
         <Link to="/Labs">Labs</Link> |
         <Link to="/Kanbas">Kanbas</Link>
         <Routes>
+         <Route path="/*" element={<Labs />} />
           <Route path="/Kanbas/*" element={<Kanbas />} />
           <Route path="/Labs/*" element={<Labs />} />
         </Routes>
