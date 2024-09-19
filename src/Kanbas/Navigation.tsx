@@ -9,6 +9,7 @@ export default function AccountNavigation() {
       <Link to="/Kanbas/Calendar" id="wd-calendar-link">Calendar</Link><br/>
       <Link to="/Kanbas/Inbox" id="wd-inbox-link">Inbox</Link><br/>
       <Link to="/Labs" id="wd-labs-link">Labs</Link><br/>
+      <Link to="/Landing" id="wd-labs-landing">Landing</Link><br/>
     </div>
 );}
 

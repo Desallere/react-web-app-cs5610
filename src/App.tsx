@@ -3,15 +3,19 @@ import "./App.css";
 import { HashRouter, Route, Routes, Navigate, Link } from "react-router-dom";
 import Labs from "./Labs";
 import Kanbas from "./Kanbas";
+import Landing from "./Landing";
 
 function App() {
   return (
     <HashRouter>
       <div>
+        <Link to="/Landing">Landing</Link> |
         <Link to="/Labs">Labs</Link> |
         <Link to="/Kanbas">Kanbas</Link>
+        
         <Routes>
-         <Route path="/*" element={<Labs />} />
+         <Route path="/*" element={<Landing />} />
+         <Route path="/Landing/*" element={<Landing />} />
           <Route path="/Kanbas/*" element={<Kanbas />} />
           <Route path="/Labs/*" element={<Labs />} />
         </Routes>
