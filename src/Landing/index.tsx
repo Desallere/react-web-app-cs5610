@@ -13,7 +13,7 @@ export default function Labs() {
       <h2> To Labs and Kanbas</h2>
       <TOC />
       <h2> To Git</h2>
-      <a href="https://github.com/Desallere/react-web-app-cs5610" target="_blank"> Git Repo</a>
+      <a id="wd-github" href="https://github.com/Desallere/react-web-app-cs5610" target="_blank"> Git Repo</a>
 
     </div>
   );
