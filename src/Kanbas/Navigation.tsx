@@ -1,5 +1,5 @@
 import { AiOutlineDashboard } from "react-icons/ai";
-import { IoCalendarOutline, IoSettingsOutline } from "react-icons/io5";
+import { IoCalendarOutline, IoHomeOutline, IoSettingsOutline } from "react-icons/io5";
 import { LiaBookSolid, LiaCogSolid } from "react-icons/lia";
 import { FaInbox, FaRegCircleUser } from "react-icons/fa6";
 import { Link } from "react-router-dom";
@@ -50,7 +50,7 @@ export default function KanbasNavigation() {
       </Link>
       <Link
         to="/Kanbas/Calendar"
-        id="wd-course-link"
+        id="wd-calendar-link"
         className="list-group-item text-white
                    bg-black text-center border-0"
       >
@@ -60,7 +60,7 @@ export default function KanbasNavigation() {
       </Link>
       <Link
         to="/Kanbas/Inbox"
-        id="wd-course-link"
+        id="wd-inbox-link"
         className="list-group-item text-white
                    bg-black text-center border-0"
       >
@@ -70,13 +70,23 @@ export default function KanbasNavigation() {
       </Link>
       <Link
         to="/Labs"
-        id="wd-course-link"
+        id="wd-labs-link"
         className="list-group-item text-white
                    bg-black text-center border-0"
       >
         <IoSettingsOutline className="fs-1 text-danger" />
         <br />
         Labs{" "}
+      </Link>
+      <Link
+        to="/Landing"
+        id="wd-landing-link"
+        className="list-group-item text-white
+                   bg-black text-center border-0"
+      >
+        <IoHomeOutline className="fs-1 text-danger" />
+        <br />
+        Landing{" "}
       </Link>
       {/* complete styling the rest of the links */}
     </div>

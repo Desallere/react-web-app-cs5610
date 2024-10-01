@@ -15,6 +15,7 @@ body * {
 .wd-dashboard-course {
   width: 260px;
   height: 300px;
+ 
 }
 
 .card {
@@ -121,3 +122,4 @@ body * {
     top: 50%;
     transform: translateY(-50%);
   }
+
