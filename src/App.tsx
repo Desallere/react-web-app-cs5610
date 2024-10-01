@@ -9,9 +9,7 @@ function App() {
   return (
     <HashRouter>
       <div>
-        <Link to="/Landing">Landing</Link> |
-        <Link to="/Labs">Labs</Link> |
-        <Link to="/Kanbas">Kanbas</Link>
+       
         
         <Routes>
          <Route path="/*" element={<Landing />} />
