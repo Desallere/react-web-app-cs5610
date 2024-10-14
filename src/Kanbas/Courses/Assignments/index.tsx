@@ -8,8 +8,13 @@ import AssignmentTitle from "./AssignmentTitle";
 import AssignmentControlButton from "./AssignmentControlButton";
 import GreenCheckmark from "../Modules/GreenCheckmark";
 import { MdOutlineAssignment } from "react-icons/md";
+import { useParams } from "react-router";
+import * as db from "../../Database";
 
 export default function Assignments() {
+  const { cid } = useParams();
+  const assignments = db.assignments;
+
   return (
     <div id="wd-assignments">
       <Assignmentontrol />
@@ -25,114 +30,46 @@ export default function Assignments() {
           <div className="table-responsive">
             <table className="table wd-lesson ">
               <tbody style={{ verticalAlign: "middle" }}>
-                <tr>
-                  <th style={{ padding: "0", margin: "0", width: "50px" }}>
-                    {" "}
-                    <BsGripVertical className="me-1 fs-3" />
-                  </th>
-                  <th style={{ padding: "0", margin: "0", width: "50px" }}>
-                    {" "}
-                    <MdOutlineAssignment className="me-1 fs-3" />
-                  </th>
-                  <th>
-                    <h4>
-                      <a
-                        className=""
-                        style={{ color: "black", textDecoration: "none" }}
-                        href="#/Kanbas/Courses/1234/Assignments/123"
-                      >
-                        <strong>A1</strong>
-                      </a>
-                    </h4>
+                {assignments
+                  .filter((assignment: any) => assignment.course === cid)
+                  .map((assignment: any) => (
+                    <tr>
+                      <th style={{ padding: "0", margin: "0", width: "50px" }}>
+                        {" "}
+                        <BsGripVertical className="me-1 fs-3" />
+                      </th>
+                      <th style={{ padding: "0", margin: "0", width: "50px" }}>
+                        {" "}
+                        <MdOutlineAssignment className="me-1 fs-3" />
+                      </th>
+                      <th>
+                        <h4>
+                          <a
+                            className=""
+                            style={{ color: "black", textDecoration: "none" }}
+                            href={`#/Kanbas/Courses/${assignment.course}/Assignments/${assignment._id}`}
+                          >
+                            <strong>{assignment.title}</strong>
+                          </a>
+                        </h4>
 
-                    <span style={{ color: "red" }}> Multiple Modules </span>
-                    <span>
-                      {" "}
-                      | <strong>Not available until </strong> May 6 at 12:00 am
-                      | <br /> <strong>Due </strong>May 12 at 11:59pm | 100 pts
-                    </span>
-                  </th>
+                        <span style={{ color: "red" }}> {assignment.module} </span>
+                        <span>
+                          {" "}
+                          | <strong>Not available until </strong> {assignment.startdate} | <br /> <strong>Due </strong> {assignment.duedate} |
+                          {assignment.points} pts
+                        </span>
+                      </th>
 
-                  <th style={{ textAlign: "right" }}>
-                    {" "}
-                    <div className="d-flex float-end">
-                      <GreenCheckmark />
-                      <BsThreeDotsVertical className="ms-4 me-2 fs-3" />
-                    </div>
-                  </th>
-                </tr>
-
-                <tr>
-                  <th style={{ padding: "0", margin: "0" }}>
-                    {" "}
-                    <BsGripVertical className="me-1 fs-3" />
-                  </th>
-                  <th style={{ padding: "0", margin: "0" }}>
-                    {" "}
-                    <MdOutlineAssignment className="me-1 fs-3" />
-                  </th>
-                  <th>
-                    <h4>
-                      <a
-                        className=""
-                        style={{ color: "black", textDecoration: "none" }}
-                        href="#/Kanbas/Courses/1234/Assignments/123"
-                      >
-                        <strong>A2</strong>
-                      </a>
-                    </h4>
-
-                    <span style={{ color: "red" }}> Multiple Modules </span>
-                    <span>
-                      {" "}
-                      | <strong>Not available until </strong> May 13 at 12:00 am
-                      | <br />
-                      <strong>Due </strong>May 20 at 11:59pm | 100 pts
-                    </span>
-                  </th>
-                  <th style={{ textAlign: "right" }}>
-                    {" "}
-                    <div className="d-flex float-end">
-                      <GreenCheckmark />
-                      <BsThreeDotsVertical className="ms-4 me-2 fs-3" />
-                    </div>
-                  </th>
-                </tr>
-                <tr>
-                  <th style={{ padding: "0", margin: "0" }}>
-                    {" "}
-                    <BsGripVertical className="me-1 fs-3" />
-                  </th>
-                  <th style={{ padding: "0", margin: "0" }}>
-                    {" "}
-                    <MdOutlineAssignment className="me-1 fs-3" />
-                  </th>
-                  <th>
-                    <h4>
-                      <a
-                        className=""
-                        style={{ color: "black", textDecoration: "none" }}
-                        href="#/Kanbas/Courses/1234/Assignments/123"
-                      >
-                        <strong>A3</strong>
-                      </a>
-                    </h4>
-                    <span style={{ color: "red" }}> Multiple Modules </span>
-                    <span>
-                      {" "}
-                      | <strong>Not available until </strong> May 20 at 12:00 am
-                      | <br />
-                      <strong>Due </strong>May 27 at 11:59pm | 100 pts
-                    </span>
-                  </th>
-                  <th style={{ textAlign: "right" }}>
-                    {" "}
-                    <div className="d-flex float-end">
-                      <GreenCheckmark />
-                      <BsThreeDotsVertical className="ms-4 me-2 fs-3" />
-                    </div>
-                  </th>
-                </tr>
+                      <th style={{ textAlign: "right" }}>
+                        {" "}
+                        <div className="d-flex float-end">
+                          <GreenCheckmark />
+                          <BsThreeDotsVertical className="ms-4 me-2 fs-3" />
+                        </div>
+                      </th>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
