@@ -1,8 +1,10 @@
 import { FaSearch } from "react-icons/fa";
 import { FaPlus } from "react-icons/fa6";
+import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 export default function Assignmentontrol() {
+  const { currentUser } = useSelector((state: any) => state.accountReducer);
   return (
     <>
       <div className="d-flex align-items-center justify-content-between mb-3">
@@ -32,13 +34,15 @@ export default function Assignmentontrol() {
             />
             Group
           </button>
+
+          {currentUser.role == "FACULTY" && (
           <button
             id="wd-add-assignment-btn"
             className="btn btn-lg btn-danger me-1"
             onClick={() => {
-              const currentHash = window.location.hash; // 获取当前的hash路径
-              const newId = Date.now().toString(); // 生成一个唯一的随机ID
-              window.location.href = `${currentHash}/${newId}`; // 拼接新的hash路径
+              const currentHash = window.location.hash; 
+              const newId = Date.now().toString(); 
+              window.location.href = `${currentHash}/${newId}`;
             }}
           >
             <FaPlus
@@ -46,7 +50,8 @@ export default function Assignmentontrol() {
               style={{ bottom: "1px" }}
             />
             Assignment
-          </button>
+          </button>)}
+
         </div>
       </div>
     </>

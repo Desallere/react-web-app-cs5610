@@ -1,4 +1,4 @@
-import { FaSearch } from "react-icons/fa";
+import { FaSearch, FaTrash } from "react-icons/fa";
 import Assignmentontrol from "./AssignmentControl";
 import { BsGripVertical, BsThreeDotsVertical } from "react-icons/bs";
 import ModulesControlButtons from "../Modules/ModuleControlButtons";
@@ -10,12 +10,23 @@ import GreenCheckmark from "../Modules/GreenCheckmark";
 import { MdOutlineAssignment } from "react-icons/md";
 import { useParams } from "react-router";
 import * as db from "../../Database";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { deleteAssignment } from "./reducer";
 
 export default function Assignments() {
   const { cid } = useParams();
+  const dispatch = useDispatch();
+  const assignments = useSelector(
+    (state: any) => state.assignmentReducer.assignments
+  );
+  const { currentUser } = useSelector((state: any) => state.accountReducer);
 
-  const assignments = useSelector((state: any) => state.assignmentReducer.assignments);
+  const handleDelete = (assignment: any) => {
+    if (window.confirm("Are you sure you want to delete this assignment?")) {
+      dispatch(deleteAssignment(assignment._id));
+    }
+  };
+
   return (
     <div id="wd-assignments">
       <Assignmentontrol />
@@ -45,26 +56,39 @@ export default function Assignments() {
                       </th>
                       <th>
                         <h4>
-                          <a
-                            className=""
-                            style={{ color: "black", textDecoration: "none" }}
-                            href={`#/Kanbas/Courses/${assignment.course}/Assignments/${assignment._id}`}
-                          >
-                            <strong>{assignment.title}</strong>
-                          </a>
+                          {currentUser.role === "FACULTY" ? (
+                            <a
+                              style={{ color: "black", textDecoration: "none" }}
+                              href={`#/Kanbas/Courses/${assignment.course}/Assignments/${assignment._id}`}
+                            >
+                              <strong>{assignment.title}</strong>
+                            </a>
+                          ) : (
+                            <strong>{assignment.title}</strong> // Display title without link for non-faculty users
+                          )}
                         </h4>
 
-                        <span style={{ color: "red" }}> {assignment.module} </span>
+                        <span style={{ color: "red" }}>
+                          {" "}
+                          {assignment.module}{" "}
+                        </span>
                         <span>
                           {" "}
-                          | <strong>Not available until </strong> {assignment.startdate} | <br /> <strong>Due </strong> {assignment.duedate} |
-                          {assignment.points} pts
+                          | <strong>Not available until </strong>{" "}
+                          {assignment.startdate} | <br /> <strong>Due </strong>{" "}
+                          {assignment.duedate} |{assignment.points} pts
                         </span>
                       </th>
 
                       <th style={{ textAlign: "right" }}>
                         {" "}
                         <div className="d-flex float-end">
+                          {currentUser.role == "FACULTY" && (
+                            <FaTrash
+                              className="text-danger me-3"
+                              onClick={() => handleDelete(assignment)}
+                            />
+                          )}
                           <GreenCheckmark />
                           <BsThreeDotsVertical className="ms-4 me-2 fs-3" />
                         </div>

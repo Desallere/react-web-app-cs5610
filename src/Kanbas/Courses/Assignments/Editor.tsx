@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router";
-import { updateAssignment } from "./reducer";
+import { updateAssignment, addAssignment } from "./reducer";
 import { IoCalendarSharp } from "react-icons/io5";
 import { RxCross1 } from "react-icons/rx";
 
 export default function AssignmentEditor() {
-  const { aid } = useParams();
+  const { aid, cid } = useParams(); // cid for course ID
   const dispatch = useDispatch();
   const assignments = useSelector(
     (state: any) => state.assignmentReducer.assignments
@@ -15,16 +15,41 @@ export default function AssignmentEditor() {
     (assignment: any) => assignment._id === aid
   );
 
-  // Local state to handle temporary assignment changes
-  const [localAssignment, setLocalAssignment] = useState(assignment);
+  // Initialize local assignment; if creating a new assignment, include cid as course ID
+  const [localAssignment, setLocalAssignment] = useState(
+    assignment || {
+      title: "New Assignment",
+      description: "New Assignment Desciption",
+      points: 0,
+      startdate: "",
+      duedate: "",
+      course: cid, // set course to current cid when creating a new assignment
+      module: "Multiple Modules"
+    }
+  );
+
+  useEffect(() => {
+    // Update course ID if a new assignment is being created
+    if (!assignment) {
+      setLocalAssignment((prev:any) => ({ ...prev, course: cid }));
+    }
+  }, [cid, assignment]);
 
   const handleSave = () => {
-    dispatch(updateAssignment(localAssignment));
-    window.location.href = `#/Kanbas/Courses/${localAssignment?.course}/Assignments`;
+    if (assignment) {
+      // Update existing assignment
+      dispatch(updateAssignment(localAssignment));
+    } else {
+      // Add new assignment with cid as the course ID
+      dispatch(addAssignment(localAssignment));
+      
+    }
+    console.log("Current localAssignment:", localAssignment);
+    window.location.href = `#/Kanbas/Courses/${localAssignment.course}/Assignments`;
   };
 
   const handleCancel = () => {
-    window.location.href = `#/Kanbas/Courses/${localAssignment?.course}/Assignments`;
+    window.location.href = `#/Kanbas/Courses/${localAssignment.course}/Assignments`;
   };
 
   return (
@@ -126,7 +151,7 @@ export default function AssignmentEditor() {
                   type="date"
                   className="form-control"
                   id="wd-due-date"
-                  defaultValue={assignment.duedate}
+                  defaultValue={assignment?.duedate}
                   value={localAssignment?.duedate || ""}
                   onChange={(e) =>
                     setLocalAssignment({
@@ -150,12 +175,12 @@ export default function AssignmentEditor() {
                       type="date"
                       className="form-control"
                       id="wd-available-until"
-                      defaultValue={assignment.startdate}
-                      value={localAssignment?.until || ""}
+                      defaultValue={assignment?.startdate}
+                      value={localAssignment?.startdate || ""}
                       onChange={(e) =>
                         setLocalAssignment({
                           ...localAssignment,
-                          until: e.target.value,
+                          startdate: e.target.value,
                         })
                       }
                     />
@@ -174,6 +199,7 @@ export default function AssignmentEditor() {
                       type="date"
                       className="form-control"
                       id="wd-available-until"
+                      defaultValue={assignment?.until}
                       value={localAssignment?.until || ""}
                       onChange={(e) =>
                         setLocalAssignment({
