@@ -10,11 +10,12 @@ import GreenCheckmark from "../Modules/GreenCheckmark";
 import { MdOutlineAssignment } from "react-icons/md";
 import { useParams } from "react-router";
 import * as db from "../../Database";
+import { useSelector } from "react-redux";
 
 export default function Assignments() {
   const { cid } = useParams();
-  const assignments = db.assignments;
 
+  const assignments = useSelector((state: any) => state.assignmentReducer.assignments);
   return (
     <div id="wd-assignments">
       <Assignmentontrol />
