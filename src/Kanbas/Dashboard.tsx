@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { addEnrollment, removeEnrollment, setEnrollments } from "./reducer";
+import { addEnrollment, removeEnrollment } from "./reducer";
 import * as db from "./Database"; // Assuming enrollments are fetched from here
 
 interface Course {
@@ -28,20 +28,16 @@ export default function Dashboard({
   deleteCourse,
   updateCourse,
 }: DashboardProps) {
-  const currentUser = useSelector(
-    (state: any) => state.accountReducer.currentUser
-  );
-  const enrollments = useSelector(
-    (state: any) => state.enrollments.enrollments
-  );
-
+  const currentUser = useSelector((state: any) => state.accountReducer.currentUser);
+  const enrollments = useSelector((state: any) => state.enrollments?.enrollments || []);
   const dispatch = useDispatch();
+
+  const [showAllCourses, setShowAllCourses] = useState<boolean>(currentUser.role === "FACULTY");
+
+  // Log enrollments for debugging
   useEffect(() => {
     console.log("Current enrollments:", enrollments);
   }, [enrollments]);
-  const [showAllCourses, setShowAllCourses] = useState<boolean>(false);
-
-  // Load enrollments on component mount
 
   const toggleShowAllCourses = () => {
     setShowAllCourses(!showAllCourses);
@@ -70,6 +66,8 @@ export default function Dashboard({
     <div id="wd-dashboard">
       <h1 id="wd-dashboard-title">Dashboard</h1>
       <hr />
+      
+      {/* FACULTY-Specific Actions */}
       {currentUser.role === "FACULTY" && (
         <div>
           <h5>
@@ -104,7 +102,8 @@ export default function Dashboard({
           />
         </div>
       )}
-      <hr />
+
+      {/* Toggle Button for Students Only */}
       {currentUser.role === "STUDENT" && (
         <button
           className="btn btn-primary float-end"
@@ -115,7 +114,7 @@ export default function Dashboard({
       )}
 
       <h2 id="wd-dashboard-published">
-        {showAllCourses ? "All Courses" : "My Enrollments"} ({courses.length})
+        {currentUser.role === "FACULTY" || showAllCourses ? "All Courses" : "My Enrollments"} ({courses.length})
       </h2>
       <hr />
 
@@ -123,7 +122,7 @@ export default function Dashboard({
         <div className="row row-cols-1 row-cols-md-5 g-4">
           {courses
             .filter((course) =>
-              showAllCourses
+              currentUser.role === "FACULTY" || showAllCourses
                 ? true
                 : enrollments.some(
                     (enrollment: any) =>
