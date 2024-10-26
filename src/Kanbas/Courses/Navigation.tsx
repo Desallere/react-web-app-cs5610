@@ -1,13 +1,19 @@
 import { Link, useLocation, useParams } from "react-router-dom";
 import { courses } from "../Database";
 
-export default function CoursesNavigation() {
-  const { cid } = useParams();
-  const course = courses.find((course) => course._id === cid);
+import React, { useState, useEffect } from "react";
+type Course = {
+  _id: string;
+  name: string;
+  number: string;
+  startDate: string;
+  endDate: string;
+  image: string;
+  description: string;
+};
+
+export default function CoursesNavigation({ course }: { course: Course }) {
   const { pathname } = useLocation();
-  if (!course) {
-    return <div>Course not found</div>;
-  }
   const links = [
     { label: "Home", path: `/Kanbas/Courses/${course._id}/Home` },
     { label: "Modules", path: `/Kanbas/Courses/${course._id}/Modules` },
