@@ -29,38 +29,20 @@ export default function Dashboard({
   updateCourse,
 }: DashboardProps) {
   const currentUser = useSelector((state: any) => state.accountReducer.currentUser);
-  const enrollments = useSelector((state: any) => state.enrollments?.enrollments || []);
+
   const dispatch = useDispatch();
 
   const [showAllCourses, setShowAllCourses] = useState<boolean>(currentUser.role === "FACULTY");
 
   // Log enrollments for debugging
-  useEffect(() => {
-    console.log("Current enrollments:", enrollments);
-  }, [enrollments]);
-
+ 
   const toggleShowAllCourses = () => {
     setShowAllCourses(!showAllCourses);
   };
 
-  const handleEnroll = (courseId: string) => {
-    const newEnrollment = {
-      _id: String(enrollments.length + 1),
-      user: currentUser._id,
-      course: courseId,
-    };
-    dispatch(addEnrollment(newEnrollment));
-  };
+  
 
-  const handleUnenroll = (courseId: string) => {
-    const enrollmentToRemove = enrollments.find(
-      (enrollment: any) =>
-        enrollment.user === currentUser._id && enrollment.course === courseId
-    );
-    if (enrollmentToRemove) {
-      dispatch(removeEnrollment(enrollmentToRemove._id));
-    }
-  };
+ 
 
   return (
     <div id="wd-dashboard">
@@ -121,21 +103,7 @@ export default function Dashboard({
       <div id="wd-dashboard-courses" className="row">
         <div className="row row-cols-1 row-cols-md-5 g-4">
           {courses
-            .filter((course) =>
-              currentUser.role === "FACULTY" || showAllCourses
-                ? true
-                : enrollments.some(
-                    (enrollment: any) =>
-                      enrollment.user === currentUser._id &&
-                      enrollment.course === course._id
-                  )
-            )
             .map((course) => {
-              const isEnrolled = enrollments.some(
-                (enrollment: any) =>
-                  enrollment.user === currentUser._id &&
-                  enrollment.course === course._id
-              );
 
               return (
                 <div
@@ -196,15 +164,11 @@ export default function Dashboard({
                           <button
                             onClick={(event) => {
                               event.preventDefault();
-                              isEnrolled
-                                ? handleUnenroll(course._id)
-                                : handleEnroll(course._id);
+                             
                             }}
-                            className={`btn float-end ${
-                              isEnrolled ? "btn-danger" : "btn-success"
-                            }`}
+                            className={`btn float-end`}
                           >
-                            {isEnrolled ? "Unenroll" : "Enroll"}
+                           
                           </button>
                         )}
                       </div>
