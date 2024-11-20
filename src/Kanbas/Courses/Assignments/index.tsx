@@ -11,7 +11,11 @@ import { MdOutlineAssignment } from "react-icons/md";
 import { useParams } from "react-router";
 import * as db from "../../Database";
 import { useDispatch, useSelector } from "react-redux";
-import { deleteAssignment } from "./reducer";
+import { deleteAssignment, setAssignment } from "./reducer";
+import * as coursesClient from "../client";
+import * as assignmentsClient from "./client";
+
+import { useEffect } from "react";
 
 export default function Assignments() {
   const { cid } = useParams();
@@ -26,6 +30,19 @@ export default function Assignments() {
       dispatch(deleteAssignment(assignment._id));
     }
   };
+  const removeAssignment = async (assignmentId: string) => {
+    await assignmentsClient.deleteAssignment(assignmentId);
+    dispatch(deleteAssignment(assignmentId));
+  };
+  const fetchAssignments = async () => {
+    const assignments = await coursesClient.findAssignmentsForCourse(
+      cid as string
+    );
+    dispatch(setAssignment(assignments));
+  };
+  useEffect(() => {
+    fetchAssignments();
+  }, []);
 
   return (
     <div id="wd-assignments">
@@ -42,59 +59,57 @@ export default function Assignments() {
           <div className="table-responsive">
             <table className="table wd-lesson ">
               <tbody style={{ verticalAlign: "middle" }}>
-                {assignments
-                  .filter((assignment: any) => assignment.course === cid)
-                  .map((assignment: any) => (
-                    <tr>
-                      <th style={{ padding: "0", margin: "0", width: "50px" }}>
-                        {" "}
-                        <BsGripVertical className="me-1 fs-3" />
-                      </th>
-                      <th style={{ padding: "0", margin: "0", width: "50px" }}>
-                        {" "}
-                        <MdOutlineAssignment className="me-1 fs-3" />
-                      </th>
-                      <th>
-                        <h4>
-                          {currentUser.role === "FACULTY" ? (
-                            <a
-                              style={{ color: "black", textDecoration: "none" }}
-                              href={`#/Kanbas/Courses/${assignment.course}/Assignments/${assignment._id}`}
-                            >
-                              <strong>{assignment.title}</strong>
-                            </a>
-                          ) : (
-                            <strong>{assignment.title}</strong> // Display title without link for non-faculty users
-                          )}
-                        </h4>
+                {assignments.map((assignment: any) => (
+                  <tr>
+                    <th style={{ padding: "0", margin: "0", width: "50px" }}>
+                      {" "}
+                      <BsGripVertical className="me-1 fs-3" />
+                    </th>
+                    <th style={{ padding: "0", margin: "0", width: "50px" }}>
+                      {" "}
+                      <MdOutlineAssignment className="me-1 fs-3" />
+                    </th>
+                    <th>
+                      <h4>
+                        {currentUser.role === "FACULTY" ? (
+                          <a
+                            style={{ color: "black", textDecoration: "none" }}
+                            href={`#/Kanbas/Courses/${assignment.course}/Assignments/${assignment._id}`}
+                          >
+                            <strong>{assignment.title}</strong>
+                          </a>
+                        ) : (
+                          <strong>{assignment.title}</strong> // Display title without link for non-faculty users
+                        )}
+                      </h4>
 
-                        <span style={{ color: "red" }}>
-                          {" "}
-                          {assignment.module}{" "}
-                        </span>
-                        <span>
-                          {" "}
-                          | <strong>Not available until </strong>{" "}
-                          {assignment.startdate} | <br /> <strong>Due </strong>{" "}
-                          {assignment.duedate} |{assignment.points} pts
-                        </span>
-                      </th>
-
-                      <th style={{ textAlign: "right" }}>
+                      <span style={{ color: "red" }}>
                         {" "}
-                        <div className="d-flex float-end">
-                          {currentUser.role == "FACULTY" && (
-                            <FaTrash
-                              className="text-danger me-3"
-                              onClick={() => handleDelete(assignment)}
-                            />
-                          )}
-                          <GreenCheckmark />
-                          <BsThreeDotsVertical className="ms-4 me-2 fs-3" />
-                        </div>
-                      </th>
-                    </tr>
-                  ))}
+                        {assignment.module}{" "}
+                      </span>
+                      <span>
+                        {" "}
+                        | <strong>Not available until </strong>{" "}
+                        {assignment.startdate} | <br /> <strong>Due </strong>{" "}
+                        {assignment.duedate} |{assignment.points} pts
+                      </span>
+                    </th>
+
+                    <th style={{ textAlign: "right" }}>
+                      {" "}
+                      <div className="d-flex float-end">
+                        {currentUser.role == "FACULTY" && (
+                          <FaTrash
+                            className="text-danger me-3"
+                            onClick={() => removeAssignment(assignment._id)}
+                          />
+                        )}
+                        <GreenCheckmark />
+                        <BsThreeDotsVertical className="ms-4 me-2 fs-3" />
+                      </div>
+                    </th>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

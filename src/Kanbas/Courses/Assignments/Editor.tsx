@@ -4,6 +4,9 @@ import { useParams } from "react-router";
 import { updateAssignment, addAssignment } from "./reducer";
 import { IoCalendarSharp } from "react-icons/io5";
 import { RxCross1 } from "react-icons/rx";
+import * as assignmentsClient from "./client";
+import * as coursesClient from "../client";
+import { deleteAssignment, setAssignment } from "./reducer";
 
 export default function AssignmentEditor() {
   const { aid, cid } = useParams(); // cid for course ID
@@ -11,6 +14,17 @@ export default function AssignmentEditor() {
   const assignments = useSelector(
     (state: any) => state.assignmentReducer.assignments
   );
+
+  const fetchAssignments = async () => {
+    const assignments = await coursesClient.findAssignmentsForCourse(
+      cid as string
+    );
+    dispatch(setAssignment(assignments));
+  };
+  useEffect(() => {
+    fetchAssignments();
+  }, []);
+
   const assignment = assignments.find(
     (assignment: any) => assignment._id === aid
   );
@@ -18,32 +32,40 @@ export default function AssignmentEditor() {
   // Initialize local assignment; if creating a new assignment, include cid as course ID
   const [localAssignment, setLocalAssignment] = useState(
     assignment || {
+      _id: aid,
       title: "New Assignment",
       description: "New Assignment Desciption",
       points: 0,
-      startdate: "",
-      duedate: "",
+      startdate: null,
+      duedate: null,
       course: cid, // set course to current cid when creating a new assignment
-      module: "Multiple Modules"
+      module: "Multiple Modules",
     }
   );
 
   useEffect(() => {
     // Update course ID if a new assignment is being created
     if (!assignment) {
-      setLocalAssignment((prev:any) => ({ ...prev, course: cid }));
+      setLocalAssignment((prev: any) => ({ ...prev, course: cid }));
     }
   }, [cid, assignment]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (assignment) {
       // Update existing assignment
+
+      await assignmentsClient.updateAssignment(localAssignment);
       dispatch(updateAssignment(localAssignment));
+      
     } else {
       // Add new assignment with cid as the course ID
-      dispatch(addAssignment(localAssignment));
-      
+      console.log("new");
+      const assignment = await assignmentsClient.createAssignment(
+        localAssignment
+      );
+      dispatch(addAssignment(assignment));
     }
+
     console.log("Current localAssignment:", localAssignment);
     window.location.href = `#/Kanbas/Courses/${localAssignment.course}/Assignments`;
   };
