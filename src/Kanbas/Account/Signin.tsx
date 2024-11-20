@@ -5,14 +5,13 @@ import { useDispatch } from "react-redux";
 import * as db from "../Database";
 import * as client from "./client";
 
-
 export default function Signin() {
   const [credentials, setCredentials] = useState<any>({});
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const signin = async () => {
     const user =   await client.signin(credentials);
-
+    console.log(process.env.REACT_APP_REMOTE_SERVER);
     if (!user) return;
     dispatch(setCurrentUser(user));
     navigate("/Kanbas/Dashboard");
