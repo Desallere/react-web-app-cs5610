@@ -15,26 +15,21 @@ import * as userClient from "./Account/client";
 
 export default function Kanbas() {
   const [courses, setCourses] = useState<any[]>([]);
+
+
   const { currentUser } = useSelector((state: any) => state.accountReducer);
-
   const fetchCourses = async () => {
-  try {
-    let courses; // 提升变量作用域
-    if (currentUser.role === "FACULTY") {
-      courses = await userClient.fetchAllCourses();
-    } else {
-      courses = await userClient.findMyCourses();
+    try {
+      const courses = await userClient.findMyCourses();
+      setCourses(courses);
+    } catch (error) {
+      console.error(error);
     }
-
-    console.log(courses);
-    setCourses(courses); // 在这里可以访问 courses
-  } catch (error) {
-    console.error(error);
-  }
-};
+  };
   useEffect(() => {
     fetchCourses();
   }, [currentUser]);
+
 
   
 
