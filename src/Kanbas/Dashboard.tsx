@@ -35,6 +35,20 @@ export default function Dashboard({ course, setCourse }: DashboardProps) {
   const addNewCourse = async () => {
     const newCourse = await userClient.createCourse(course);
     setCourses([...courses, newCourse]);
+
+    // Enroll the current faculty user to the new course
+    const newEnrollment = {
+      _id: String(Date.now()), // Generate a unique ID for the enrollment
+      user: currentUser._id,
+      course: newCourse._id,
+    };
+    await enrollClient.addEnroll(
+      newEnrollment._id,
+      newEnrollment.user,
+      newEnrollment.course
+    );
+    dispatch(addEnrollment(newEnrollment));
+    setEnrollmentStatuses((prev) => ({ ...prev, [newCourse._id]: true }));
   };
 
   const deleteCourse = async (courseId: string) => {
@@ -47,20 +61,17 @@ export default function Dashboard({ course, setCourse }: DashboardProps) {
     setCourses(courses.map((c) => (c._id === course._id ? course : c)));
   };
 
-  // Fetch courses based on toggle state
   useEffect(() => {
     const fetchCourses = async () => {
-      const allCourses =
-        currentUser.role === "FACULTY"
-          ? await userClient.fetchAllCourses()
-          : showAllCourses
-          ? await userClient.fetchAllCourses()
-          : await userClient.findMyCourses();
+      const allCourses = showAllCourses
+        ? await userClient.fetchAllCourses()
+        : await userClient.findMyCourses();
       setCourses(allCourses);
     };
+  
     fetchCourses();
   }, [showAllCourses, currentUser.role]);
-
+  
   useEffect(() => {
     const checkEnrollments = async () => {
       const statuses: Record<string, boolean> = {};
@@ -69,9 +80,7 @@ export default function Dashboard({ course, setCourse }: DashboardProps) {
           currentUser._id,
           course._id
         );
-        console.log(response)
-        statuses[course._id] = response; // Assume response returns true/false
-      
+        statuses[course._id] = response;
       }
   
       setEnrollmentStatuses(statuses);
@@ -118,7 +127,6 @@ export default function Dashboard({ course, setCourse }: DashboardProps) {
       <h1 id="wd-dashboard-title">Dashboard</h1>
       <hr />
 
-      {/* Faculty-Specific Actions */}
       {currentUser.role === "FACULTY" && (
         <div>
           <h5>
@@ -152,7 +160,6 @@ export default function Dashboard({ course, setCourse }: DashboardProps) {
         </div>
       )}
 
-      {/* Toggle Button for Students */}
       {currentUser.role === "STUDENT" && (
         <button
           className="btn btn-primary float-end"

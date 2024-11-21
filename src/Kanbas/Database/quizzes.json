@@ -1,0 +1,52 @@
+[
+  {
+    "_id": "RS101Q1",
+    "title": "Q1 - HTML",
+    "course": "RS101",
+    "points": 100,
+    "quizType": "Graded Quiz",
+    "assignmentGroup": "Quizzes",
+    "shuffleAnswers": "Yes",
+    "timeLimit": 20,
+    "multipleAttempts": "No",
+    "howManyAttempts": 1,
+    "showCorrectAnswers": "No",
+    "accessCode": "",
+    "oneQuestionAtATime": "Yes",
+    "webcamRequired": "No",
+    "lockQuestionsAfterAnswering": "No",
+    "dueDate": "May 13 at 11:59pm",
+    "availableDate": "May 6 at 12:00am",
+    "untilDate": "May 13 at 11:59pm",
+    "numberofQuestion": 10,
+    "score": {
+      "123": 100,
+      "234": 60
+    }
+  },
+  {
+    "_id": "RS101Q1",
+    "title": "Q1 - HTML",
+    "course": "RS101",
+    "points": 100,
+    "quizType": "Graded Quiz",
+    "assignmentGroup": "Quizzes",
+    "shuffleAnswers": "Yes",
+    "timeLimit": 20,
+    "multipleAttempts": "No",
+    "howManyAttempts": 1,
+    "showCorrectAnswers": "No",
+    "accessCode": "",
+    "oneQuestionAtATime": "Yes",
+    "webcamRequired": "No",
+    "lockQuestionsAfterAnswering": "No",
+    "dueDate": "May 13 at 11:59pm",
+    "availableDate": "May 6 at 12:00am",
+    "untilDate": "May 13 at 11:59pm",
+    "numberofQuestion": 10,
+    "score": {
+      "123": 100,
+      "234": 60
+    }
+  }
+]
