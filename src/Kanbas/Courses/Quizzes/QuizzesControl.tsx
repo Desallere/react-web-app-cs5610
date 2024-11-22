@@ -33,7 +33,7 @@ export default function QuizzesControl() {
             onClick={() => {
               const currentHash = window.location.hash; 
               const newId = Date.now().toString(); 
-              window.location.href = `${currentHash}/${newId}`;
+              window.location.href = `${currentHash}/${newId}/edit`;
             }}
           >
             <FaPlus

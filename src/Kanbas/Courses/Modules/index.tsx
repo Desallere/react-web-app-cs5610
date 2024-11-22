@@ -70,7 +70,6 @@ export default function Modules() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       saveModule({ ...module, editing: false });
-
                     }
                   }}
                   defaultValue={module.name}
