@@ -12,9 +12,57 @@ export const updateQuiz = async (quizId: string, quiz: any) => {
   return response.data;
 };
 
+
 export const findQuiz = async (quizId: string) => {
   const response = await axios.get(`${QUIZZES_API}/${quizId}/find`);
   return response.data;
 };
+
+
+
+export const createQuiz = async (quiz: any) => {
+  const response = await axios.post(`${QUIZZES_API}/create`,quiz);
+  return response.data;
+};
+
+export const deleteQuiz = async (quizId: string) => {
+  const response = await axios.delete(`${QUIZZES_API}/${quizId}/delete`);
+  return response.data;
+};
+
+
+export const checkQuizexist = async (quizId: string) => {
+  const response = await axios.get(`${QUIZZES_API}/${quizId}/Quizexist`);
+  return response.data;
+};
+
+export const findQuestion = async (quizId: string) => {
+  const response = await axios.get(`${QUIZZES_API}/${quizId}/questions/find`);
+  return response.data;
+};
+
+export const updateQuestion = async (questionId: string, question: any) => {
+  const response = await axios.put(`${QUIZZES_API}/${questionId}/updateQuestion`,question);
+  return response.data;
+};
+
+export const deleteQuestion = async (questionId: string) => {
+  const response = await axios.delete(`${QUIZZES_API}/${questionId}/deleteQuestion`);
+  return response.data;
+};
+
+export const createQuestion = async (question: any) => {
+  const response = await axios.post(`${QUIZZES_API}/createQuestion`,question);
+  return response.data;
+};
+
+
+
+export const checkQuestionexist = async (questionId: string) => {
+  const response = await axios.get(`${QUIZZES_API}/${questionId}/Questionexist`);
+  return response.data;
+};
+
+
 
 

@@ -9,21 +9,31 @@ import { MdOutlineAssignment } from "react-icons/md";
 import { useParams } from "react-router";
 import * as db from "../../Database";
 import { useDispatch, useSelector } from "react-redux";
-import { setQuizzes } from "./reducer";
+import { deleteQuiz, setQuizzes } from "./reducer";
 import * as coursesClient from "../client";
 import QuizzesControl from "./QuizzesControl";
 import * as quizzesClient from "./client";
 import { BiRocket } from "react-icons/bi";
+
+interface QuizDetails {
+  totalPoints: number;
+  questionCount: number;
+}
 
 export default function Quizzes() {
   const { cid } = useParams();
   const dispatch = useDispatch();
   const quizzes = useSelector((state: any) => state.quizzesReducer.quizzes);
   const { currentUser } = useSelector((state: any) => state.accountReducer);
-  const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(
-    null
-  );
+  const [dropdownPosition, setDropdownPosition] = useState<{
+    top: number;
+    left: number;
+    index: number | null;
+  }>({ top: 0, left: 0, index: null });
   const dropdownRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [quizDetails, setQuizDetails] = useState<{
+    [quizId: string]: { totalPoints: number; questionCount: number };
+  }>({});
 
   const fetchQuizzes = async () => {
     const quizzes = await coursesClient.findQuizzesForCourse(cid as string);
@@ -32,17 +42,27 @@ export default function Quizzes() {
 
   const togglePublishedStatus = async (quizId: string) => {
     const updatedQuizzes = quizzes.map((quiz: any) => {
-      if (quiz._id === quizId) {
-        // Toggle the published status
-        return { ...quiz, is_published: !quiz.is_published };
-      }
-      setOpenDropdownIndex(null);
+      try {
+        if (quiz._id === quizId) {
+          return { ...quiz, is_published: !quiz.is_published };
+        }
+      } catch {}
       return quiz;
     });
 
     await quizzesClient.updateQuizState(quizId);
-    // Update the quizzes state in the Redux store
     dispatch(setQuizzes(updatedQuizzes));
+    setDropdownPosition({ ...dropdownPosition, index: null });
+  };
+
+  const handleDelete = async (quizId: string) => {
+    try {
+      setDropdownPosition({ ...dropdownPosition, index: null });
+      await quizzesClient.deleteQuiz(quizId);
+      dispatch(deleteQuiz(quizId));
+    } catch (error) {
+      console.error("Failed to delete quiz:", error);
+    }
   };
 
   const getQuizStatus = (quiz: any) => {
@@ -66,9 +86,9 @@ export default function Quizzes() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRefs.current) {
-        dropdownRefs.current.forEach((ref, i) => {
+        dropdownRefs.current.forEach((ref) => {
           if (ref && !ref.contains(event.target as Node)) {
-            setOpenDropdownIndex(null);
+            setDropdownPosition({ ...dropdownPosition, index: null });
           }
         });
       }
@@ -78,36 +98,56 @@ export default function Quizzes() {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [dropdownPosition]);
 
-  useEffect(() => {
-    const adjustDropdownPosition = (index: number) => {
-      const dropdown = dropdownRefs.current[index];
-      if (dropdown) {
-        const rect = dropdown.getBoundingClientRect();
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
+  const handleDropdownToggle = (event: React.MouseEvent, index: number) => {
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    let left = rect.left;
 
-        // Adjust horizontal position if it overflows
-        if (rect.right > viewportWidth) {
-          dropdown.style.left = `-${rect.right - viewportWidth}px`;
-        } else {
-          dropdown.style.left = "initial"; // Reset if not overflowing
-        }
-
-        // Adjust vertical position if it overflows
-        if (rect.bottom > viewportHeight) {
-          dropdown.style.top = `-${rect.bottom - viewportHeight}px`;
-        } else {
-          dropdown.style.top = "initial"; // Reset if not overflowing
-        }
-      }
-    };
-
-    if (openDropdownIndex !== null) {
-      adjustDropdownPosition(openDropdownIndex);
+    // Check if the dropdown goes out of the right edge
+    const dropdownWidth = 150; // Estimated dropdown width
+    if (left + dropdownWidth > window.innerWidth) {
+      left = window.innerWidth - dropdownWidth - 10; // Adjust to fit within the viewport, leaving a margin
     }
-  }, [openDropdownIndex]);
+
+    setDropdownPosition({
+      top: rect.bottom,
+      left: left,
+      index: dropdownPosition.index === index ? null : index,
+    });
+  };
+  const fetchQuestionsForQuizzes = async (quizzes: any) => {
+    const details: { [quizId: string]: QuizDetails } = {};
+    await Promise.all(
+      quizzes.map(async (quiz: any) => {
+        try {
+          const questions = await quizzesClient.findQuestion(quiz._id);
+          const totalPoints = questions.reduce(
+            (acc: any, question: any) => acc +  Number(question.points),
+            0
+          );
+          details[quiz._id] = {
+            totalPoints,
+            questionCount: questions.length,
+          };
+        } catch (error) {
+          console.error(
+            `Failed to fetch questions for quiz ${quiz._id}:`,
+            error
+          );
+          details[quiz._id] = { totalPoints: 0, questionCount: 0 };
+        }
+      })
+    );
+    setQuizDetails(details);
+  };
+  useEffect(() => {
+    const loadQuizzesAndDetails = async () => {
+      await fetchQuizzes();
+      fetchQuestionsForQuizzes(quizzes);
+    };
+    loadQuizzesAndDetails();
+  }, [cid, quizzes]);
 
   return (
     <div id="wd-quizzes">
@@ -130,7 +170,12 @@ export default function Quizzes() {
                       <BsGripVertical className="me-1 fs-3" />
                     </th>
                     <th style={{ padding: "0", margin: "0", width: "50px" }}>
-                      <BiRocket className="me-1 fs-3" />
+                      <a
+                        href={`#/Kanbas/Courses/${quiz.course}/Quizzes/${quiz._id}`}
+                        style={{ color: "inherit", textDecoration: "none" }}
+                      >
+                        <BiRocket className="me-1 fs-3" />
+                      </a>
                     </th>
                     <th>
                       <h4>
@@ -141,8 +186,9 @@ export default function Quizzes() {
                           <strong>{quiz.title}</strong>
                         </a>
                       </h4>
-                      <span> {getQuizStatus(quiz)}</span> | Due {quiz.dueDate} |{" "}
-                      {quiz.points} pts | 11 questions
+                      <span>{getQuizStatus(quiz)}</span>| Due {quiz.dueDate} |{" "}
+                      {quizDetails[quiz._id]?.totalPoints || 0} pts |{" "}
+                      {quizDetails[quiz._id]?.questionCount || 0} questions
                     </th>
 
                     <th style={{ textAlign: "right", position: "relative" }}>
@@ -152,46 +198,13 @@ export default function Quizzes() {
                         </div>
                         <button
                           className="btn btn-link ms-4 me-2 p-0"
-                          onClick={() =>
-                            setOpenDropdownIndex(
-                              index === openDropdownIndex ? null : index
-                            )
+                          onClick={(event) =>
+                            handleDropdownToggle(event, index)
                           }
                         >
                           <BsThreeDotsVertical className="fs-3" />
                         </button>
                       </div>
-                      {openDropdownIndex === index && (
-                        <div
-                          ref={(el) => (dropdownRefs.current[index] = el)}
-                          className="dropdown-menu show"
-                          style={{
-                            position: "absolute", // Ensure it's positioned relative to the parent
-                            right: 0, // Align to the right side of the button
-                            top: "100%", // Align right below the button
-                            zIndex: 1000,
-                          }}
-                        >
-                          <button
-                            className="dropdown-item"
-                            onClick={() => console.log("Edit clicked")}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className="dropdown-item"
-                            onClick={() => console.log("Delete clicked")}
-                          >
-                            Delete
-                          </button>
-                          <button
-                            className="dropdown-item"
-                            onClick={() => togglePublishedStatus(quiz._id)}
-                          >
-                            {quiz.is_published ? "Unpublish" : "Publish"}
-                          </button>
-                        </div>
-                      )}
                     </th>
                   </tr>
                 ))}
@@ -200,6 +213,46 @@ export default function Quizzes() {
           </div>
         </li>
       </ul>
+
+      {dropdownPosition.index !== null && (
+        <div
+          ref={(el) => (dropdownRefs.current[dropdownPosition.index!] = el)}
+          className="dropdown-menu show"
+          style={{
+            position: "absolute",
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            zIndex: 1000,
+          }}
+        >
+          <button
+            className="dropdown-item"
+            onClick={() =>
+              (window.location.href = `#/Kanbas/Courses/${
+                quizzes[dropdownPosition.index!].course
+              }/Quizzes/${quizzes[dropdownPosition.index!]._id}`)
+            }
+          >
+            Edit
+          </button>
+          <button
+            className="dropdown-item"
+            onClick={() => handleDelete(quizzes[dropdownPosition.index!]._id)}
+          >
+            Delete
+          </button>
+          <button
+            className="dropdown-item"
+            onClick={() =>
+              togglePublishedStatus(quizzes[dropdownPosition.index!]._id)
+            }
+          >
+            {quizzes[dropdownPosition.index!].is_published
+              ? "Unpublish"
+              : "Publish"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

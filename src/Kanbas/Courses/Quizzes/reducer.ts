@@ -14,11 +14,8 @@ const quizzesSlice = createSlice({
       state.quizzes = action.payload;
     },
     addQuiz: (state, { payload: quiz }) => {
-      const newQuiz: any = {
-        _id: new Date().getTime().toString(),
-        ...quiz,
-      };
-      state.quizzes = [...state.quizzes, newQuiz];
+    
+      state.quizzes = [...state.quizzes, quiz];
     },
     deleteQuiz: (state, { payload: quizId }) => {
       state.quizzes = state.quizzes.filter((q: any) => q._id !== quizId);

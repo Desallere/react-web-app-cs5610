@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 
 import { useDispatch, useSelector } from "react-redux";
-import { updateQuiz } from "./reducer"; // Adjust the import path if necessary
+import { addQuiz, updateQuiz } from "./reducer"; // Adjust the import path if necessary
 import { useParams } from "react-router";
 import { useNavigate } from "react-router-dom";
 import * as quizzesClient from "./client";
@@ -10,6 +10,7 @@ export default function QuizDetails() {
   const { qid, cid } = useParams();
   const navigate = useNavigate();
   const [quizDetails, setQuizDetails] = useState({
+    _id: qid,
     title: "",
     description: "",
     course: cid,
@@ -30,18 +31,19 @@ export default function QuizDetails() {
     untilDate: "",
   });
 
-
-
   const dispatch = useDispatch();
 
   useEffect(() => {
     const fetchQuizDetails = async () => {
       if (qid) {
         try {
-          const quiz = await quizzesClient.findQuiz(qid);
-   
-          setQuizDetails(quiz);
-    
+          const _qid: string = qid ?? "defaultQuizId";
+          const quizExists = await quizzesClient.checkQuizexist(_qid);
+          if (quizExists) {
+            const quiz = await quizzesClient.findQuiz(qid);
+
+            setQuizDetails(quiz);
+          }
         } catch (error) {
           console.error("Error fetching quiz details:", error);
         }
@@ -49,36 +51,55 @@ export default function QuizDetails() {
     };
 
     fetchQuizDetails();
-
   }, [qid]); // Use qid as dependency
-
 
   const handleSave = async () => {
     const _qid: string = qid ?? "defaultQuizId";
-    const quiz = await quizzesClient.updateQuiz(_qid, quizDetails);
-    dispatch(updateQuiz({ ...quiz, _id: qid }));
-    navigate(`/Kanbas/Courses/${quizDetails.course}/Quizzes/${qid}`);
+
+    // Check if the quiz exists
+    const quizExists = await quizzesClient.checkQuizexist(_qid);
+
+    if (quizExists) {
+      // If quiz exists, update it
+      const quiz = await quizzesClient.updateQuiz(_qid, quizDetails);
+      dispatch(updateQuiz({ ...quiz, _id: qid }));
+      navigate(`/Kanbas/Courses/${cid}/Quizzes/${qid}`)
+    } else {
+      // If quiz doesn't exist, create a new quiz
+      const newQuiz = await quizzesClient.createQuiz(quizDetails);
+      console.log(quizDetails);
+      dispatch(addQuiz({ newQuiz })); // Assuming newQuiz comes with an 'id'
+      navigate(`/Kanbas/Courses/${cid}/Quizzes`)
+    }
+
+
   };
 
   const handleSaveAndPublish = async () => {
     const _qid: string = qid ?? "defaultQuizId";
   
-    // Using the updater function style to ensure you have the latest state
-    setQuizDetails(prevDetails => {
-      const updatedDetails = { ...prevDetails, is_published: true };
-      console.log(updatedDetails);
+    // Check if the quiz exists
+    const quizExists = await quizzesClient.checkQuizexist(_qid);
   
-      // Update quiz after setting the state
-      quizzesClient.updateQuiz(_qid, updatedDetails).then(quiz => {
+    // Create updated quiz details once
+    const updatedDetails = { ...quizDetails, is_published: true };
+    setQuizDetails(updatedDetails);
+    console.log(updatedDetails);
+  
+    if (quizExists) {
+      // If quiz exists, update it
+      quizzesClient.updateQuiz(_qid, updatedDetails).then((quiz) => {
         dispatch(updateQuiz({ ...quiz, _id: qid }));
         navigate(`/Kanbas/Courses/${updatedDetails.course}/Quizzes/${qid}`);
       });
-  
-      return updatedDetails;
-    });
+    } else {
+      // If quiz doesn't exist, create a new quiz
+      quizzesClient.createQuiz(updatedDetails).then((newQuiz) => {
+        dispatch(addQuiz({ newQuiz })); // Assuming newQuiz comes with an 'id'
+        navigate(`/Kanbas/Courses/${cid}/Quizzes`);
+      });
+    }
   };
-
-
 
   const handleInputChange = (
     e: React.ChangeEvent<
