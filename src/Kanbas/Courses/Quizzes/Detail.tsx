@@ -1,15 +1,13 @@
 import { useState, useEffect } from "react";
-import { FaSearch, FaTrash } from "react-icons/fa";
-import { BsGripVertical, BsThreeDotsVertical } from "react-icons/bs";
 import { useParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { setQuizzes } from "./reducer";
 import * as coursesClient from "../client";
-import QuizzesControl from "./QuizzesControl";
-import * as quizzesClient from "./client";
 
 export default function QuizzesDetail() {
-  const { qid, cid } = useParams(); // cid for course ID
+  const { currentUser } = useSelector((state: any) => state.accountReducer);
+
+  const { qid, cid } = useParams();
   const dispatch = useDispatch();
 
   const quizzes = useSelector((state: any) => state.quizzesReducer.quizzes);
@@ -24,103 +22,122 @@ export default function QuizzesDetail() {
 
   const quiz = quizzes.find((quiz: any) => quiz._id === qid);
 
-
   return (
     <div className="container">
       <div className="d-flex justify-content-center mb-3">
         <button
-          className="btn btn-primary me-2"
-        
+          className={`btn ${
+            currentUser.role === "STUDENT" ? "btn-danger" : "btn-primary"
+          }`}
           onClick={() => {
-            const currentHash = window.location.hash; 
-            window.location.href = `${currentHash}/take`}}
+            const currentHash = window.location.hash;
+            window.location.href = `${currentHash}/take`;
+          }}
         >
-          Preview
+          {currentUser.role === "STUDENT" ? "Take Quiz" : "Preview"}
         </button>
-        <button
-          className="btn btn-secondary"
-          onClick={() =>  {
-            const currentHash = window.location.hash; 
-            window.location.href = `${currentHash}/edit`}}
-        >
-          Edit
-        </button>
+        {currentUser.role !== "STUDENT" && (
+          <button
+            className="btn btn-secondary ms-2"
+            onClick={() => {
+              const currentHash = window.location.hash;
+              window.location.href = `${currentHash}/edit`;
+            }}
+          >
+            Edit
+          </button>
+        )}
       </div>
       <hr />
       <h1>{quiz.title}</h1>
       <ul className="">
-        <li className="list-group-item d-flex">
-          <div className="col-4 font-weight-bold text-end">
-            <strong>Quiz Type</strong>
-          </div>
-          <div className="col-8 ms-3">{quiz.quizType}</div>
-        </li>
-        <li className="list-group-item d-flex">
-          <div className="col-4 font-weight-bold text-end">
-            <strong>Points</strong>
-          </div>
-          <div className="col-8 ms-3">{quiz.points}</div>
-        </li>
-        <li className="list-group-item d-flex">
-          <div className="col-4 font-weight-bold text-end">
-            <strong>Assignment Group</strong>
-          </div>
-          <div className="col-8 ms-3">{quiz.assignmentGroup}</div>
-        </li>
-        <li className="list-group-item d-flex">
-          <div className="col-4 font-weight-bold text-end">
-            <strong>Shuffle Answers</strong>
-          </div>
-          <div className="col-8 ms-3">{quiz.shuffleAnswers ? "Yes" : "No"}</div>
-        </li>
-        <li className="list-group-item d-flex">
-          <div className="col-4 font-weight-bold text-end">
-            <strong>Time Limit</strong>
-          </div>
-          <div className="col-8 ms-3">{quiz.timeLimit} minutes</div>
-        </li>
-        <li className="list-group-item d-flex">
-          <div className="col-4 font-weight-bold text-end">
-            <strong>Multiple Attempts</strong>
-          </div>
-          <div className="col-8 ms-3">{quiz.multipleAttempts? "Yes" : "No"} </div>
-        </li>
-        <li className="list-group-item d-flex">
-          <div className="col-4 font-weight-bold text-end">
-            <strong>How Many Attempts</strong>
-          </div>
-          <div className="col-8 ms-3">{quiz.howManyAttempts} </div>
-        </li>
-        <li className="list-group-item d-flex">
-          <div className="col-4 font-weight-bold text-end">
-            <strong>Show Correct Answers</strong>
-          </div>
-          <div className="col-8 ms-3">{quiz.showCorrectAnswers? "Yes" : "No"} </div>
-        </li>
-        <li className="list-group-item d-flex">
-          <div className="col-4 font-weight-bold text-end">
-            <strong>Access Code</strong>
-          </div>
-          <div className="col-8 ms-3">{quiz.accessCode}</div>
-        </li>
-        <li className="list-group-item d-flex">
-          <div className="col-4 font-weight-bold text-end">
-            <strong>One Question at a Time</strong>
-          </div>
-          <div className="col-8 ms-3">{quiz.oneQuestionAtATime? "Yes" : "No"}</div>
-        </li>
-        <li className="list-group-item d-flex">
-          <div className="col-4 font-weight-bold text-end">
-            <strong>Webcam Required</strong>
-          </div>
-          <div className="col-8 ms-3">{quiz.webcamRequired? "Yes" : "No"}</div>
-        </li>
-        <li className="list-group-item d-flex">
-          <div className="col-4 font-weight-bold text-end">
-            <strong>Lock Questions After Answering</strong>
-          </div>
-          <div className="col-8 ms-3">{quiz.lockQuestionsAfterAnswering? "Yes" : "No"} </div>
-        </li>
+     
+        <ul className="">
+          <li className="list-group-item d-flex">
+            <div className="col-4 font-weight-bold text-end">
+              <strong>Quiz Type</strong>
+            </div>
+            <div className="col-8 ms-3">{quiz.quizType}</div>
+          </li>
+          <li className="list-group-item d-flex">
+            <div className="col-4 font-weight-bold text-end">
+              <strong>Points</strong>
+            </div>
+            <div className="col-8 ms-3">{quiz.points}</div>
+          </li>
+          <li className="list-group-item d-flex">
+            <div className="col-4 font-weight-bold text-end">
+              <strong>Assignment Group</strong>
+            </div>
+            <div className="col-8 ms-3">{quiz.assignmentGroup}</div>
+          </li>
+          <li className="list-group-item d-flex">
+            <div className="col-4 font-weight-bold text-end">
+              <strong>Shuffle Answers</strong>
+            </div>
+            <div className="col-8 ms-3">
+              {quiz.shuffleAnswers ? "Yes" : "No"}
+            </div>
+          </li>
+          <li className="list-group-item d-flex">
+            <div className="col-4 font-weight-bold text-end">
+              <strong>Time Limit</strong>
+            </div>
+            <div className="col-8 ms-3">{quiz.timeLimit} minutes</div>
+          </li>
+          <li className="list-group-item d-flex">
+            <div className="col-4 font-weight-bold text-end">
+              <strong>Multiple Attempts</strong>
+            </div>
+            <div className="col-8 ms-3">
+              {quiz.multipleAttempts ? "Yes" : "No"}{" "}
+            </div>
+          </li>
+          <li className="list-group-item d-flex">
+            <div className="col-4 font-weight-bold text-end">
+              <strong>How Many Attempts</strong>
+            </div>
+            <div className="col-8 ms-3">{quiz.howManyAttempts} </div>
+          </li>
+          <li className="list-group-item d-flex">
+            <div className="col-4 font-weight-bold text-end">
+              <strong>Show Correct Answers</strong>
+            </div>
+            <div className="col-8 ms-3">
+              {quiz.showCorrectAnswers ? "Yes" : "No"}{" "}
+            </div>
+          </li>
+          <li className="list-group-item d-flex">
+            <div className="col-4 font-weight-bold text-end">
+              <strong>Access Code</strong>
+            </div>
+            <div className="col-8 ms-3">{quiz.accessCode}</div>
+          </li>
+          <li className="list-group-item d-flex">
+            <div className="col-4 font-weight-bold text-end">
+              <strong>One Question at a Time</strong>
+            </div>
+            <div className="col-8 ms-3">
+              {quiz.oneQuestionAtATime ? "Yes" : "No"}
+            </div>
+          </li>
+          <li className="list-group-item d-flex">
+            <div className="col-4 font-weight-bold text-end">
+              <strong>Webcam Required</strong>
+            </div>
+            <div className="col-8 ms-3">
+              {quiz.webcamRequired ? "Yes" : "No"}
+            </div>
+          </li>
+          <li className="list-group-item d-flex">
+            <div className="col-4 font-weight-bold text-end">
+              <strong>Lock Questions After Answering</strong>
+            </div>
+            <div className="col-8 ms-3">
+              {quiz.lockQuestionsAfterAnswering ? "Yes" : "No"}{" "}
+            </div>
+          </li>
+        </ul>
       </ul>
       <table className="table">
         <thead>

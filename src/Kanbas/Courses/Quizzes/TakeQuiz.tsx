@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { findQuestion, findQuiz } from "./client"; // Ensure findQuiz is imported
+import {
+  findQuestion,
+  findQuiz,
+  updateQuestionAnswer,
+  getQuestionAnswer,
+  updateUserQuizData,
+} from "./client";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 interface Choice {
   value: string;
@@ -24,51 +31,64 @@ interface Question {
 }
 
 interface Quiz {
-  _id: string; // MongoDB ObjectId represented as a string
-  title: string; // Title of the quiz
-  course: string; // Reference to the course (could be a string ID or name)
-  points: number; // Total points available for the quiz
-  is_published: boolean; // Whether the quiz is published
-  description: string; // Textual description of the quiz
-  quizType: string; // Type of quiz, default can be set but here is a string
-  assignmentGroup: string; // Grouping category for assignments
-  shuffleAnswers: boolean; // Whether to shuffle answers (default true)
-  timeLimit: number; // Time limit in minutes
-  multipleAttempts: boolean; // If multiple attempts are allowed (default false)
-  howManyAttempts: number; // Number of attempts allowed (default 1)
-  showCorrectAnswers: boolean; // Show correct answers after completion
-  accessCode: string; // Access code, an empty string by default
-  oneQuestionAtATime: boolean; // Display one question at a time (default true)
-  webcamRequired: boolean; // If a webcam is required (default false)
-  lockQuestionsAfterAnswering: boolean; // Lock questions after answering (default false)
-  dueDate: string; // Due date in ISO string format
-  availableDate: string; // Start availability date in ISO string format
-  untilDate: string; // End availability date in ISO string format
-  numberofQuestion: number; // Number of questions in the quiz
-  score: Record<string, number>; // Scores keyed by userId (or studentId)
-  starttime: Record<string, string>; // Start times keyed by userId in ISO string format
-  attemptnum: Record<string, number>; // Attempt numbers keyed by userId
-  // Add other quiz fields you need
+  _id: string;
+  title: string;
+  course: string;
+  points: number;
+  is_published: boolean;
+  description: string;
+  quizType: string;
+  assignmentGroup: string;
+  shuffleAnswers: boolean;
+  timeLimit: number;
+  multipleAttempts: boolean;
+  howManyAttempts: number;
+  showCorrectAnswers: boolean;
+  accessCode: string;
+  oneQuestionAtATime: boolean;
+  webcamRequired: boolean;
+  lockQuestionsAfterAnswering: boolean;
+  dueDate: string;
+  availableDate: string;
+  untilDate: string;
+  numberofQuestion: number;
+  score: Record<string, number>;
+  starttime: Record<string, string>;
+  attemptnum: Record<string, number>;
 }
 
 const QuizQuestions: React.FC = () => {
+  const { cid } = useParams<{ cid: string }>();
   const { qid } = useParams<{ qid: string }>();
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [quiz, setQuiz] = useState<Quiz | null>(null); // State for the quiz
+  const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [loadingQuestions, setLoadingQuestions] = useState<boolean>(true);
-  const [loadingQuiz, setLoadingQuiz] = useState<boolean>(true); // Loading state for the quiz
+  const [loadingQuiz, setLoadingQuiz] = useState<boolean>(true);
   const [responses, setResponses] = useState<{ [key: string]: string }>({});
   const { currentUser } = useSelector((state: any) => state.accountReducer);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchQuizAndQuestions = async () => {
       try {
         if (qid) {
-          const fetchedQuiz = await findQuiz(qid); // Fetch the quiz
+          const fetchedQuiz = await findQuiz(qid);
           setQuiz(fetchedQuiz);
 
-          const fetchedQuestions = await findQuestion(qid); // Fetch the questions
+          const fetchedQuestions = await findQuestion(qid);
           setQuestions(fetchedQuestions);
+
+          // Fetch each question's initial answer for the current user
+          const initialResponses: { [key: string]: string } = {};
+          for (const question of fetchedQuestions) {
+            const answer = await getQuestionAnswer(
+              question._id,
+              currentUser._id
+            );
+            initialResponses[question._id] = answer.answer;
+          }
+
+          setResponses(initialResponses);
         }
       } catch (error) {
         console.error("Failed to fetch quiz or questions", error);
@@ -77,29 +97,83 @@ const QuizQuestions: React.FC = () => {
         setLoadingQuestions(false);
       }
     };
-
+    console.log(currentUser._id);
     fetchQuizAndQuestions();
-  }, [qid]);
+  }, [qid, currentUser._id]);
 
-  const handleResponseChange = (questionId: string, choiceKey: string) => {
+  const handleResponseChange = async (questionId: string, choiceKey: string) => {
     setResponses((prevResponses) => ({
       ...prevResponses,
       [questionId]: choiceKey,
     }));
+    try {
+      await updateQuestionAnswer(questionId, currentUser._id, choiceKey);
+    } catch (error) {
+      console.error("Failed to update answer", error);
+    }
   };
 
-  const handleTextChange = (questionId: string, text: string) => {
+  const handleTextChange = async (questionId: string, text: string) => {
     setResponses((prevResponses) => ({
       ...prevResponses,
       [questionId]: text,
     }));
+    try {
+      await updateQuestionAnswer(questionId, currentUser._id, text);
+    } catch (error) {
+      console.error("Failed to update answer", error);
+    }
   };
 
-  // Get user-specific data or default to "None" if not present
+  const handleSubmitQuiz = async () => {
+    if (!quiz || !questions) return;
+    let score = 0;
+
+    questions.forEach((question) => {
+      const userResponse = responses[question._id];
+      if (question.type === "Multi" || question.type === "TruF") {
+        const correctChoiceKey = Object.keys(question.choices).find(
+          (key) => question.choices[key].answer === true
+        );
+        if (userResponse === correctChoiceKey) {
+          score += question.points;
+        }
+      } else if (question.type === "FillB") {
+        const correctValues = Object.values(question.choices).map((choice) =>
+          choice.value.toLowerCase()
+        );
+        if (correctValues.includes(userResponse?.toLowerCase())) {
+          score += question.points;
+        }
+      }
+    });
+
+    const attemptNum = (quiz.attemptnum[currentUser._id] || 0) + 1;
+    const currentTime = new Date().toISOString();
+
+    try {
+      await updateUserQuizData(
+        qid!,
+        currentUser._id,
+        score,
+        currentTime,
+        attemptNum
+      );
+      alert("Quiz submitted successfully!");
+      navigate(`/Kanbas/Courses/${cid}/Quizzes`);
+    } catch (error) {
+      console.error("Failed to submit quiz", error);
+    }
+  };
+
+  const userAttempts = quiz?.attemptnum[currentUser._id] ?? 0;
+  const cannotEdit = currentUser.role === "STUDENT" &&
+    ((!quiz?.multipleAttempts && userAttempts >= 1) || 
+     (quiz?.multipleAttempts && userAttempts >= quiz.howManyAttempts));
+
   const userStartTime = quiz?.starttime[currentUser._id] ?? "None";
   const userScore = quiz?.score[currentUser._id]?.toString() ?? "None";
-  const userAttempts = quiz?.attemptnum[currentUser._id]?.toString() ?? "None";
-
+  
   return (
     <div className="container mt-4">
       {loadingQuiz ? (
@@ -110,19 +184,13 @@ const QuizQuestions: React.FC = () => {
           <p>{quiz.description}</p>
           <div className="row">
             <div className="col-md-4 mb-2">
-              <span>
-                <strong>Attempts:</strong> {userAttempts}
-              </span>
+              <strong>Attempts:</strong> {userAttempts}
             </div>
             <div className="col-md-4 mb-2">
-              <span>
-                <strong>Last Attempt:</strong> {userStartTime}
-              </span>
+              <strong>Last Attempt:</strong> {userStartTime}
             </div>
             <div className="col-md-4 mb-2">
-              <span>
-                <strong>Last Score:</strong> {userScore}
-              </span>
+              <strong>Last Score:</strong> {userScore}
             </div>
           </div>
         </div>
@@ -164,6 +232,7 @@ const QuizQuestions: React.FC = () => {
                           onChange={() =>
                             handleResponseChange(question._id, key)
                           }
+                          disabled={cannotEdit}
                         />
                         {choice.value}
                       </label>
@@ -179,6 +248,7 @@ const QuizQuestions: React.FC = () => {
                     handleTextChange(question._id, e.target.value)
                   }
                   placeholder="Type your answer here"
+                  disabled={cannotEdit}
                 />
               ) : (
                 <p>Unknown question type</p>
@@ -186,6 +256,14 @@ const QuizQuestions: React.FC = () => {
             </div>
           </div>
         ))
+      )}
+
+      {cannotEdit ? (
+        <p className="text-danger">You cannot edit your answers now.</p>
+      ) : (
+        <button className="btn btn-primary mt-3" onClick={handleSubmitQuiz}>
+          Submit Quiz
+        </button>
       )}
     </div>
   );

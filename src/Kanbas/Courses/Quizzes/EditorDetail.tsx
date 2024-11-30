@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import * as quizzesClient from "./client";
 
 export default function QuizDetails() {
+  const { currentUser } = useSelector((state: any) => state.accountReducer);
   const { qid, cid } = useParams();
   const navigate = useNavigate();
   const [quizDetails, setQuizDetails] = useState({

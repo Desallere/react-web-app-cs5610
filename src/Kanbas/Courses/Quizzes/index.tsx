@@ -38,15 +38,15 @@ export default function Quizzes() {
   const fetchQuizzes = async () => {
     const quizzes = await coursesClient.findQuizzesForCourse(cid as string);
     dispatch(setQuizzes(quizzes));
+    // Fetch questions immediately after quizzes are fetched
+    await fetchQuestionsForQuizzes(quizzes);
   };
 
   const togglePublishedStatus = async (quizId: string) => {
     const updatedQuizzes = quizzes.map((quiz: any) => {
-      try {
-        if (quiz._id === quizId) {
-          return { ...quiz, is_published: !quiz.is_published };
-        }
-      } catch {}
+      if (quiz._id === quizId) {
+        return { ...quiz, is_published: !quiz.is_published };
+      }
       return quiz;
     });
 
@@ -104,10 +104,9 @@ export default function Quizzes() {
     const rect = (event.target as HTMLElement).getBoundingClientRect();
     let left = rect.left;
 
-    // Check if the dropdown goes out of the right edge
-    const dropdownWidth = 150; // Estimated dropdown width
+    const dropdownWidth = 150;
     if (left + dropdownWidth > window.innerWidth) {
-      left = window.innerWidth - dropdownWidth - 10; // Adjust to fit within the viewport, leaving a margin
+      left = window.innerWidth - dropdownWidth - 10;
     }
 
     setDropdownPosition({
@@ -116,6 +115,11 @@ export default function Quizzes() {
       index: dropdownPosition.index === index ? null : index,
     });
   };
+  const filteredQuizzes =
+    currentUser.role === "STUDENT"
+      ? quizzes.filter((quiz: any) => quiz.is_published)
+      : quizzes;
+
   const fetchQuestionsForQuizzes = async (quizzes: any) => {
     const details: { [quizId: string]: QuizDetails } = {};
     await Promise.all(
@@ -123,12 +127,24 @@ export default function Quizzes() {
         try {
           const questions = await quizzesClient.findQuestion(quiz._id);
           const totalPoints = questions.reduce(
-            (acc: any, question: any) => acc +  Number(question.points),
+            (acc: any, question: any) => acc + Number(question.points),
             0
           );
+
+          const questionCount = questions.length;
+
+          // Update quiz points and number of questions
+          const updatedQuiz = {
+            ...quiz,
+            points: totalPoints,
+            numberofQuestion: questionCount,
+          };
+
+          await quizzesClient.updateQuiz(quiz._id, updatedQuiz);
+          console.log("requestupdate");
           details[quiz._id] = {
             totalPoints,
-            questionCount: questions.length,
+            questionCount,
           };
         } catch (error) {
           console.error(
@@ -141,18 +157,10 @@ export default function Quizzes() {
     );
     setQuizDetails(details);
   };
-  useEffect(() => {
-    const loadQuizzesAndDetails = async () => {
-      await fetchQuizzes();
-      fetchQuestionsForQuizzes(quizzes);
-    };
-    loadQuizzesAndDetails();
-  }, [cid, quizzes]);
 
   return (
     <div id="wd-quizzes">
       <QuizzesControl />
-
       <ul id="wd-quizzes" className="list-group rounded-0">
         <li className="wd-module list-group-item p-0 mb-5 ms-3 fs-5 assignment-table">
           <div className="wd-title p-3 ps-2 bg-secondary">
@@ -164,7 +172,7 @@ export default function Quizzes() {
           <div className="table-responsive">
             <table className="table wd-lesson">
               <tbody style={{ verticalAlign: "middle" }}>
-                {quizzes.map((quiz: any, index: number) => (
+                {filteredQuizzes.map((quiz: any, index: number) => (
                   <tr key={index}>
                     <th style={{ padding: "0", margin: "0", width: "50px" }}>
                       <BsGripVertical className="me-1 fs-3" />
@@ -187,7 +195,11 @@ export default function Quizzes() {
                         </a>
                       </h4>
                       <span>{getQuizStatus(quiz)}</span>| Due {quiz.dueDate} |{" "}
-                      {quizDetails[quiz._id]?.totalPoints || 0} pts |{" "}
+                      {currentUser.role === "STUDENT"
+                        ? `${
+                          quiz.score[currentUser._id] || 0
+                          }/${quizDetails[quiz._id]?.totalPoints || 0} pts`
+                        : `${quizDetails[quiz._id]?.totalPoints || 0} pts`} | {" "}
                       {quizDetails[quiz._id]?.questionCount || 0} questions
                     </th>
 
@@ -196,14 +208,16 @@ export default function Quizzes() {
                         <div style={{ opacity: quiz.is_published ? 1 : 0.5 }}>
                           <GreenCheckmark />
                         </div>
-                        <button
-                          className="btn btn-link ms-4 me-2 p-0"
-                          onClick={(event) =>
-                            handleDropdownToggle(event, index)
-                          }
-                        >
-                          <BsThreeDotsVertical className="fs-3" />
-                        </button>
+                        {currentUser.role === "FACULTY" && (
+                          <button
+                            className="btn btn-link ms-4 me-2 p-0"
+                            onClick={(event) =>
+                              handleDropdownToggle(event, index)
+                            }
+                          >
+                            <BsThreeDotsVertical className="fs-3" />
+                          </button>
+                        )}
                       </div>
                     </th>
                   </tr>
