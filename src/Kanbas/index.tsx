@@ -16,22 +16,48 @@ import * as userClient from "./Account/client";
 export default function Kanbas() {
   const [courses, setCourses] = useState<any[]>([]);
 
-
-  const { currentUser } = useSelector((state: any) => state.accountReducer);
-  const fetchCourses = async () => {
+  const [enrolling, setEnrolling] = useState<boolean>(false);
+  const findCoursesForUser = async () => {
     try {
-      const courses = await userClient.findMyCourses();
+      const courses = await userClient.findCoursesForUser(currentUser._id);
       setCourses(courses);
     } catch (error) {
       console.error(error);
     }
   };
-  useEffect(() => {
-    fetchCourses();
-  }, [currentUser]);
-
-
+  const fetchCourses = async () => {
+    try {
+      const allCourses = await courseClient.fetchAllCourses();
+      const enrolledCourses = await userClient.findCoursesForUser(
+        currentUser._id
+      );
+      const courses = allCourses.map((course: any) => {
+        if (enrolledCourses.find((c: any) => c._id === course._id)) {
+          return { ...course, enrolled: true };
+        } else {
+          return course;
+        }
+      });
+      console.log(courses);
+      setCourses(courses);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+ 
+  const { currentUser } = useSelector((state: any) => state.accountReducer);
   
+
+
+  useEffect(() => {
+    console.log('Fetching courses; enrolling:', enrolling);
+    if (currentUser) {
+      enrolling ? fetchCourses() : findCoursesForUser();
+    }
+  }, [currentUser, enrolling]);
+  
+
+ 
 
   const [course, setCourse] = useState<any>({
     _id: Date.now().toString(),
@@ -42,6 +68,7 @@ export default function Kanbas() {
     image: "reactjs.jpg",
     description: "New Description",
   });
+
   const addNewCourse = async () => {
     const newCourse = await userClient.createCourse(course);
     setCourses([...courses, newCourse]);
@@ -65,6 +92,8 @@ export default function Kanbas() {
     );
   };
 
+
+
   return (
     <Provider store={store}>
       <Session>
@@ -79,10 +108,10 @@ export default function Kanbas() {
                 element={
                   <ProtectedRoute>
                     <Dashboard
-                      
+                    
                       course={course}
                       setCourse={setCourse}
-                 
+                   
                     />
                   </ProtectedRoute>
                 }
@@ -92,7 +121,7 @@ export default function Kanbas() {
                 path="Courses/:cid/*"
                 element={
                   <ProtectedRoute>
-                    <Courses courses={courses} />
+                    <Courses />
                   </ProtectedRoute>
                 }
               />
